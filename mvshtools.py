@@ -23,6 +23,11 @@ magnetic-applied-field cycles.
     v-   Calculate initial susceptibility. 
     iv-  Make Chantrell et.al. analisys (:func:`chapopcha`)         
 
+Control figures can be disabled macking global variable FIGS False::
+
+    >>> mvshtools.FIGS = False
+
+
 
 Dependencies
 -------------
@@ -39,7 +44,7 @@ numpy, lmfit, matplotlib
 __author__  = 'Gustavo Pasquevich'
 __version__ = 0.171031  # History at the end of module.
 _debug      = False
-FIGS        = False
+FIGS        = True
 NUMFIG      = 9000         # variable for function __newfig__
 
  
@@ -122,20 +127,27 @@ def fitfunc(pars, H, data=None, eps=None):
         return (y - data)
     return (y - data)/eps
 
-# Indices (posiciones) de las regiones de donde se obtiene los parametros 
-# iniciales. PRIMERA APROXIMACÓN DEL SALTO.
-#
-# Se definen dos rectas paralelas asociadas a la aproximación lineal en las
-# regiones con campos entre  L2b > H > L1b  y  L1a > H > L2a. 
 
 
 def __fourpoints__(P1,P2,P3,P4):
-    """Dado los cuatro puntos P1 P2 P3 y P4 asociados a las ramas del ciclo 
-       M vs H, devuelve estimadores de la magnitud del salto, pendiente y 
-       centro de la curva.
+    """ Given four points P1, P2 P3 and P4 of the M vs H curve this function
+        obtain apoximate charactesristic parameters of the curve.
 
-       P1 y P2 son dos puntos en la parte negativa del ciclo, P3 y P4 en la 
-       parte positiva."""
+
+                             _ ----------     ^
+                            / P3       P4     | 
+                           /                  | Step
+                         _-                   | 
+                --------                      |
+               P1     P2                      v 
+
+
+        P1 and P2 should be points in the negative and saturated part of the 
+        curve while P3,and P4 in the positive part. This function returns 
+        stmators for "step", superimpose linear contribution, and offset.
+    """
+
+
     for k in [P1,P2,P3,P4]:
         #print 'puntos del triángulo::::: ',k
         if FIGS:
@@ -150,19 +162,19 @@ def __fourpoints__(P1,P2,P3,P4):
     x3,y3 = P3
     x4,y4 = P4
 
-    d3 = (y3 - y1)-(y2 - y1)*(x3 -x1)/(x2-x1)
+    d3 = (y3 - y1)-(y2 - y1)*(x3 -x1)/(x2-x1)  # d stands for delta ($\delta M$)
     d4 = (y4 - y1)-(y2 - y1)*(x4 -x1)/(x2-x1)
     d1 = (y1 - y4)-(y3 - y4)*(x1 -x4)/(x3-x4)
     d2 = (y2 - y4)-(y3 - y4)*(x2 -x4)/(x3-x4)
 
-    pend12 = (y2 -y1)/(x2-x1)
-    pend34 = (y3 -y4)/(x3-x4)
+    slope12 = (y2 -y1)/(x2-x1)
+    slope34 = (y3 -y4)/(x3-x4)
 
-    dm = (-d1-d2+d3+d4)/4.
-    pend = (pend12 + pend34)/2.
+    step = (-d1-d2+d3+d4)/4.
+    slope = (slope12 + slope34)/2.
     centro = ((y2-y1)/(x2-x1)*(-x1) + (y3-y4)/(x3-x4)*(-x4) + (y1+y4) )/2.
 
-    return dm, pend, centro
+    return step, slope, centro
 
 
 def Xi_and_Hc(H1,M1,H2,M2,limx=188):
