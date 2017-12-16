@@ -41,6 +41,7 @@ __version__ = 0.171031  # History at the end of module.
 _debug      = False
 FIGS        = False
 NUMFIG      = 9000         # variable for function __newfig__
+
  
 
 def splitcycle(H,M):
@@ -364,6 +365,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
 def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
     """ Retrive lineal contribution to cycle and remve it from cycle.
+
 
         H y M corresponden a un ciclo completo. Es decir H comienza y termina
         en el mismo valor (o un valor aproximado).
