@@ -21,7 +21,7 @@ magnetic-applied-field cycles.
     iii- Calculate (and remove) the superimposed lineal contribution. (:func:`removepara`)
     iv-  Calculate coercivity field.
     v-   Calculate initial susceptibility. 
-    iv-  Make Chantrell et.al. analisys (:func:`chapopcha`)         
+    iv-  Make Chantrell Popplewelwell and Charles analysis (:func:`cpc`)         
 
 Control figures can be disabled macking global variable FIGS False::
 
@@ -443,7 +443,7 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
     return H1,M1,H2,M2,[pend,salto,desp]
 
 
-def chapopcha(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10, 
+def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10, 
               weight='None', rhr=False, aini=100.):
     """ Given a superparamagnetic cycle M vs H, assuming distribution of Lagevin 
         functions calculate <mu>, N and <mu^2> from M vs H cycle. 
@@ -508,7 +508,7 @@ def chapopcha(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         The function has been called first as the first author of the paper
         in which is base on. However, I thought it wasn't correct name only one 
         of the names of a three authors of the paper. So the functon name was 
-        named by the three first letters of each one of the authors: chapopcha. 
+        named by the first letter of each one of the authors: **cpc**. 
 
                
     """
@@ -570,7 +570,7 @@ def chapopcha(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
     # Finish wit cycle anaysis 
     # ========================================================================= 
-
+    print '========================'
     print 'cycle-analysis results'
     print '========================'
     print 'slope 1:',p1['Xi'].value
@@ -618,15 +618,8 @@ def chapopcha(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     print('<mu>_mu ....... = %.1f mB'%(mumu/mu))
 
 
-
-
-
-
     # Armamos una pendiente promedio a partir de la obtenida para cada rama.
     # Corregimos ambas ramas eliminando esta pendiente.
-
-
-
 
     if FIGS:
         __newfig__()
