@@ -13,17 +13,17 @@ mvshtools
 Simple tools for MvsH cycle operation
 --------------------------------------
 
-This python-module gives some tools to quantitatively analyze magnetization vs. 
+This python-module gives some tools to quantitatively analyse magnetisation vs. 
 magnetic-applied-field cycles.
 
     i-   Split conventional two branches loops into two independent branches.
-    ii-  Retrieve magnetization saturation using asymptotic behavior. 
+    ii-  Retrieve magnetisation saturation using asymptotic behaviour. 
     iii- Calculate (and remove) the superimposed lineal contribution. (:func:`removepara`)
     iv-  Calculate coercivity field.
     v-   Calculate initial susceptibility. 
     iv-  Make Chantrell Popplewelwell and Charles analysis (:func:`cpc`)         
 
-Control figures can be disabled macking global variable FIGS False::
+Control figures can be disabled making global variable FIGS False::
 
     >>> mvshtools.FIGS = False
 
@@ -42,7 +42,7 @@ numpy, lmfit, matplotlib
 # I should also apologize because the quality of my English. Sorry. GAP.
 # ------------------------------------------------------------------------------
 __author__  = 'Gustavo Pasquevich'
-__version__ = 0.171031  # History at the end of module.
+__version__ = '0.1712xx'  # History at the end of module.
 _debug      = False
 FIGS        = True
 NUMFIG      = 9000         # variable for function __newfig__
@@ -50,10 +50,10 @@ NUMFIG      = 9000         # variable for function __newfig__
  
 
 def splitcycle(H,M):
-    """ Separete a M vs H cycle into two branches.
+    """ Separates an MvsH cycle into two branches.
 
-        H  and M  are expect to  be  close MvsH cycle,  without  initial 
-        magentization curve. Both are  lists or numpy.arrays of the same length.
+        H and M  are expect to be close MvsH cycle,  without  initial 
+        magentisation curve. Both are  lists or numpy.arrays of the same length.
 
         Returns:: 
             
@@ -62,11 +62,8 @@ def splitcycle(H,M):
         where "1" indicate negative  dH/dt branch while "2" indicate the other 
         one.
     """
-    # ------------------------------------------------------------------------------
-    # SEPARA EL LOS DATOS EN AMBAS RAMAS:
-    #
-    # H1 y M1 son la rama desde H_max a H_min, y H2 y M2 correspondene a la rama 
-    # siguiente, de Hmin a Hmax.
+    # H1 y M1 is the branch froom H_max to H_min, while H2 and M2 is the branch
+    # from H_min to H_max.
      
     if H[0] > H[len(H)/2]:     # Rama inicial decreciente
         _ind_ret = np.where(H == min(H))[0]
@@ -107,7 +104,7 @@ def fitfunc(pars, H, data=None, eps=None):
     y  =  Ms  * sign(H) * (1 - ----- - -----  ) +  Xi * H   + offset
                           (     |H|     H^2   )   
 
-    This function represents the asintotic behaviour of a magnetic 
+    This function represents the asymptotic behaviour of a magnetic 
     ferromagnetic component in addition to a lineal contribution, Xi*x.
 
     """
@@ -131,7 +128,7 @@ def fitfunc(pars, H, data=None, eps=None):
 
 def __fourpoints__(P1,P2,P3,P4):
     """ Given four points P1, P2 P3 and P4 of the M vs H curve this function
-        obtain apoximate charactesristic parameters of the curve.
+        obtain approximate characteristics parameters of the curve.
 
 
                              _ ----------     ^
@@ -144,7 +141,7 @@ def __fourpoints__(P1,P2,P3,P4):
 
         P1 and P2 should be points in the negative and saturated part of the 
         curve while P3,and P4 in the positive part. This function returns 
-        stmators for "step", superimpose linear contribution, and offset.
+        estimators for "step", superimpose linear contribution, and offset.
     """
 
 
@@ -238,13 +235,13 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
     Returns
     =======
-    lmfit.Parameter instance result of the tail-branch fit of magnetization 
+    lmfit.Parameter instance result of the tail-branch fit of magnetisation 
     curve with :func:`fit func`
 
     IMPORTANT
     ========= 
     **H** and **M** input arguments corresponds only to one of the two 
-    MvsH-cycle branchs. For a complete cycle it should be called twice, one 
+    MvsH-cycle branches. For a complete cycle it should be called twice, one 
     time for each branch. 
 
     Arguments
@@ -254,22 +251,22 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     1) H, magnetic field. 1d-numpy array.  
     2) M, magnetization.  1d-numpy array.
     3) HLIM = [L1,L2]
-        L1 and L2 are two limits defining the fitting zone. The analisis is
+        L1 and L2 are two limits defining the fitting zone. The analysis is
         done in the regions [-L1,-L2] and [L2,L1], i.e where  L2 < |H| < L1.
 
     kwargs:
     -------
-    1) eps: weight values for fittng process. Numpy-array same size as **H**. 
+    1) eps: weight values for fitting process. Numpy-array same size as **H**. 
     1) label: label for the figures. kwarg for pyplot.plot(). 
               [FIGS global variable should be True]
-    2) fixed: dictionary with the parametesrs that should be fixed:
+    2) fixed: dictionary with the parameters that should be fixed:
               e.g. fixed = {'Ms':value,'a':0,'b':None}
                 
               valid keys: 'Ms','Xi', 'offset', 'a' and 'b'
               values can be numbers (the values), or None which indicate 
-              that the value of the parametesr is the automatically obtained 
+              that the value of the parameters is the automatically obtained 
               but it should be a fix parameter.
-    3) initial: dictinary with initail values. If None (or not defined) then 
+    3) initial: dictionary with initial values. If None (or not defined) then 
               they are guessed.              
        
     """
@@ -376,7 +373,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
 
 def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
-    """ Retrive lineal contribution to cycle and remve it from cycle.
+    """ Retrieve lineal contribution to cycle and remove it from cycle.
 
 
         H y M corresponden a un ciclo completo. Es decir H comienza y termina
@@ -632,7 +629,17 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     return H1,M1,H2,M2,[pend,salto,desp]
 
 def remove_H_remanent(H,M):
-    """ H and M should be an unique branch. """
+    """ Removes the remanent applied magnetic field. Removes coercive field by 
+        by simple **Hc** subtraction. This function should be used only if 
+        correspond.
+
+        Arguments:
+        ----------
+        **H** and **M** should be an unique branch. 
+
+        From **M** extract **Hc** and returns **H-Hc**. 
+
+    """
     # decreasing field franch
     if np.mean(np.diff(H)<0):
         Hr = np.interp(0,M[::-1],H[::-1])
@@ -643,12 +650,11 @@ def remove_H_remanent(H,M):
     
 
 def __makeEdiff__(H,smallvalue=1e-10 ):
-    """ Calculated the inverse of the mean difference of each point with their
-        neigbours. 
-        All points have a value given by their two neigbours, except
-        extrem points that have only a neigbour. 
+    """ Calculates the inverse of the mean difference of each point with their
+        neighbours. All points are assigned to a value given by their two 
+        neighbours, except the extreme points that have only one neighbour. 
         
-        To avoid division by zero all values are incremented in samllvalue. 
+        To avoid division by zero all values are incremented in **smallvalue**. 
         Default value should work without problem. """
     D = np.diff(H)        
     D1 = np.append(D[0],D)
@@ -670,6 +676,7 @@ def __newfig__(num=None):
 # ==============================================================================
 # Historial de versiones
 # =======================
+# 1712xx     Se subió a github, el versionado sigue desde ahí. 
 # 171129     Se modifican docstrings pensando en subirlo a github
 # 171031     Se agregan lineas al docstring. También hace unas semasn se agregó
 #            el cálculo de Chantrell. 
