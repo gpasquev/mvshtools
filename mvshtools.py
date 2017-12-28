@@ -444,7 +444,14 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
               weight='None', rhr=False, aini=100.):
     """ Given a superparamagnetic cycle M vs H, assuming distribution of Lagevin 
         functions calculate <mu>, N and <mu^2> from M vs H cycle. 
-        It use Chantrell, Popplewelwell, Charles proposal. 
+
+        It perform similar analysis as proposed by R. Chantrell, J. Popplewell 
+        and S. Charles in "Measurements of particle size distribution parameters 
+        in ferrofluids"  IEEE Transactions on Magnetics ( Volume: 14, Issue: 5, 
+        September 1978). pag. 975 - 977 DOI:10.1109/TMAG.1978.1059918.  
+
+        The relevant information of analysis is printed on screen. See below 
+        `printed information`.
 
         Arguments:
         ==========
@@ -455,10 +462,6 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
                 whatever or even nothing.
                 H and M are np.arrays that with a whole cycle, i.e they include
                 boths branches. 
-
-        Returns: 
-        ========
-                H1, M1, H2, M2, [slop,step,offset]
 
         kwargs:
         =======
@@ -487,20 +490,42 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
                 superparamagnet. However here is only a technical parameter 
                 to better suceptibility at low fields. 
 
+        Returns: 
+        ========
+                H1, M1, H2, M2, [slop,step,offset]
+
+        Printed Information:
+        ====================
+        1: <mu> = magnetic moment retrieved from 1st branch. In $\mu_B$
+        2: <mu> = magnetic moment retrieved from 2nd branch. In $\mu_B$
+        1: N    = number per particles per something (depends on the units 
+                  of **M**). retrieved from 1st branch. 
+        2: N    = idem but retrieved from 2nd branch. 
+
+        <mu>    = magnetic moment (mean value of 1st and 2nd branches results) 
+                                   and mean difference for uncertainty).   
+        sqrt(<mu^2>) =   
+        N       = mean value of N obtained from both branches. 
+        rho     = <mu>^2/<mu^2>  (as defined by Allia et al.)
+        STD     = standar deviation of moments distribution sqrt( <mu^2>-<mu>^2 )
+        sigma-lognormal = 
+                  sigma parameter of a lognormal with same mean value and 
+                  standar-deviation 
+        <mu>_mu = mean magnetic moment according moment-distribution. 
+
+
         El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, según:: 
 
             H1,M1: curva con dH/dt < 0. El campo decrece con el tiempo.
             H2,M2: curva con dH/dt > 0. El campo aumenta con el tiempo.
 
-        Con la variable global FIGS = True muestra gráficas intermedias del 
-        proceso de determinación y eliminación de la contribución lineal, los 
-        cuales son útiles como herramientas para refinar los parámetros de 
-        entrada. 
+        If global variable is set true control graphics are plotted during
+        analysis. Is recommended to use graphics to control the goodness of 
+        analysis.   
 
-        It perform similar analysis as proposed by R. Chantrell, J. Popplewell 
-        and S. Charles in "Measurements of particle size distribution parameters 
-        in ferrofluids"  IEEE Transactions on Magnetics ( Volume: 14, Issue: 5, 
-        September 1978). pag. 975 - 977 DOI:10.1109/TMAG.1978.1059918.  
+            >> import mvshtools as mt
+            >> mt.FIGS = True
+
 
         The function has been called first as the first author of the paper
         in which is base on. However, I thought it wasn't correct name only one 
@@ -587,13 +612,14 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
     mu1      = kB*T/p1['a']/muB
     mu2      = kB*T/p2['a']/muB
+    emu      = abs(mu1-mu2)/2. 
     mu       = (mu1+mu2)/2.
     N1       = p1['Ms']/mu1/muB
     N2       = p2['Ms']/mu2/muB
     N        = (N1+N2)/2.
     mumu     = (X-pend)*3*kB*T/N/muB**2 
     
-    rhoA = mumu/mu**2
+    rhoA     = mumu/mu**2
     STD      = np.sqrt(mumu-mu**2)
     sigma    = np.sqrt(np.log(rhoA))
 
@@ -605,7 +631,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     print('1: N    = %.2e'%(N1))
     print('2: N    = %.2e'%(N2))
     print('----------------------------------')
-    print('<mu> .......... = %.1f mB'%(mu)) 
+    print('<mu> .......... = %.1f mB +/- %.1f'%(mu,emu)) 
     print('sqrt(<mu^2>)... = %.1f mB'%(np.sqrt(mumu)))
     print('N ............. = %.2e num/sth.'%(N))
     print('rho ........... = %.2f '%(rhoA))
@@ -614,9 +640,6 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     print('----------------------------------')
     print('<mu>_mu ....... = %.1f mB'%(mumu/mu))
 
-
-    # Armamos una pendiente promedio a partir de la obtenida para cada rama.
-    # Corregimos ambas ramas eliminando esta pendiente.
 
     if FIGS:
         __newfig__()
