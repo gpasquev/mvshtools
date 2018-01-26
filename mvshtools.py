@@ -409,12 +409,12 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
 
     # Fin de ajustes 
 
-    print 'pendiente 1:',p1['Xi']
-    print 'pendiente 2:',p2['Xi']
-    print 'salto 1    :',p1['Ms']
-    print 'salto 2    :',p2['Ms']
-    print 'despl.  1  :',p1['offset']
-    print 'despl.  2  :',p2['offset']
+    print 'slope     1:',p1['Xi']
+    print 'slope     2:',p2['Xi']
+    print 'Ms 1       :',p1['Ms']
+    print 'Ms 2       :',p2['Ms']
+    print 'offset  1  :',p1['offset']
+    print 'offset  2  :',p2['offset']
     print 'a  1       :',p1['a']
     print 'a  2       :',p2['a']
     print 'b  1       :',p1['b']
@@ -441,7 +441,7 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
 
 
 def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10, 
-              weight='None', rhr=False, aini=100.):
+              weight='None', rhr=False, aini=100., ob = False):
     """ Given a superparamagnetic cycle M vs H, assuming distribution of Lagevin 
         functions calculate <mu>, N and <mu^2> from M vs H cycle. 
 
@@ -458,10 +458,10 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         H and M: 
                 They are assumed to be in cgs units. H in Oe and M in emu/sth.
                 **sth** stands for something, indicating the fact that the
-                moment or magnetization bvalues can be given by grams, cm^3,
+                moment or magnetisation values can be given by grams, cm^3,
                 whatever or even nothing.
                 H and M are np.arrays that with a whole cycle, i.e they include
-                boths branches. 
+                both branches. 
 
         kwargs:
         =======
@@ -472,10 +472,10 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
                 **Hmax**, can be a value or the string 'max' (default) which 
                 indicates that Hmax must be taken as the maximum of |H|.
 
-        clin:   propuesta de constante lineal a mantener constante 
+        clin:   value of lineal-constant to be take as a fixed parameter.
                 (if None [default], then is fitted) 
 
-        a:      proposing initial value for "a" parametre in asympthotic process.
+        a:      proposing initial value for "a" parameter in asymptotic process.
  
         T:      Temperature used for Chanterell calculations,
         limx :  max H field for calculation dM/dH at H=0.
@@ -485,10 +485,13 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
                     'sep' : inversamente proporcional a la separación entre 
                             puntos.
         rhr:    remove-H-remanenet. Before the analysis shift the values of H so 
-                they not have remanent field. That is aceptable is measurement 
+                they not have remanent field. That is acceptable is measurement 
                 provides of an SQUID, and is known that the sample behaves like
                 superparamagnet. However here is only a technical parameter 
-                to better suceptibility at low fields. 
+                to better suceptibility at low fields.
+
+        ob:     {False} or True. ob = one-branch. Is true if in H and M vectors 
+                correspond only to a branch.  
 
         Returns: 
         ========
@@ -538,8 +541,11 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     kB  = 1.3806488e-16  #erg/K Boltzmann Constant in cgs units
     muB = 9.27400968e-21 #erg/G Bohr Magneton in cgs units.
 
-    H1,M1,H2,M2 = splitcycle(H,M)
-
+    if ob:
+        H1,H2,M1,M2 = H, H, M ,M
+    else:    
+        H1,M1,H2,M2 = splitcycle(H,M)
+    
     if rhr:
         print 'rhr1'
         H1 = remove_H_remanent(H1,M1)
@@ -590,7 +596,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
     
 
-    # Finish wit cycle anaysis 
+    # Finish wit cycle analysis 
     # ========================================================================= 
     print '========================'
     print 'cycle-analysis results'
@@ -649,7 +655,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         pyp.axhline(-salto,color= 'k', alpha =0.5)
         pyp.legend(loc=0)
 
-    return H1,M1,H2,M2,[pend,salto,desp]
+    return H1,M1,H2,M2,[pend,salto,desp],mu,N,mumu
 
 def remove_H_remanent(H,M):
     """ Removes the remanent applied magnetic field. Removes coercive field by 
