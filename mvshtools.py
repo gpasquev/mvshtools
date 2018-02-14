@@ -363,11 +363,11 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
     if FIGS:
         pyp.plot(h_fit,m_fit,'x',label='selected data to fit')
+        pyp.plot(H,fitfunc(out.params,H),color='k',lw=1,ls='--',label='fitted curve')
+        pyp.title(label)
+        pyp.ylim([M.min(),M.max()])
         pyp.ylim([M.min(),M.max()])
         pyp.legend(loc=0)
-        pyp.title(label)  
-        pyp.plot(H,fitfunc(out.params,H),color='k',lw=1,ls='--')
-        pyp.ylim([M.min(),M.max()])
     
     return out.params
 
@@ -461,7 +461,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
                 moment or magnetisation values can be given by grams, cm^3,
                 whatever or even nothing.
                 H and M are np.arrays that with a whole cycle, i.e they include
-                both branches. 
+                both branches. In case it is only one branch the kwarg **ob** 
+                must be set True.
 
         kwargs:
         =======
@@ -665,18 +666,28 @@ def remove_H_remanent(H,M):
         Arguments:
         ----------
         **H** and **M** should be an unique branch. 
-
         From **M** extract **Hc** and returns **H-Hc**. 
 
     """
-    # decreasing field franch
-    if np.mean(np.diff(H)<0):
-        Hr = np.interp(0,M[::-1],H[::-1])
-    elif np.mean(np.diff(H)>0):
-        Hr = np.interp(0,M,H)
+    def Hr(H,M):
+        if np.mean(np.diff(H)<0):
+            Hr = np.interp(0,M[::-1],H[::-1])
+        elif np.mean(np.diff(H)>0):
+            Hr = np.interp(0,M,H)
+        return Hr
 
-    return H-Hr
-    
+    H = H-Hr(H,M)
+    return H
+
+def cyclewithoutHc(H,M):
+    """ Returns a similar cycle with corecive removed """
+    H1,M1,H2,M2 = splitcycle(H,M)
+    H1 = remove_H_remanent(H1,M1)
+    H2 = remove_H_remanent(H2,M2)
+    H = np.concatenate([H1,H2])
+    M = np.concatenate([M1,M2])
+    return H,M
+                    
 
 def __makeEdiff__(H,smallvalue=1e-10 ):
     """ Calculates the inverse of the mean difference of each point with their
