@@ -21,7 +21,24 @@ magnetic-applied-field cycles.
     iii- Calculate (and remove) the superimposed lineal contribution. (:func:`removepara`)
     iv-  Calculate coercivity field.
     v-   Calculate initial susceptibility. 
-    iv-  Make Chantrell Popplewelwell and Charles analysis (:func:`cpc`)         
+    iv-  Obtain relevant parameters of Langevin-lik cycle by Chantrell 
+         Popplewelwell and Charles analysis (:func:`cpc`)         
+
+--------------------------------------
+cpc method
+--------------------------------------
+The most used method on this module might be the cpc method. Which
+allows obtain <mu> and <mu^2> form near zero and asymptotic behaviour of
+Langevin-like magnetic cycle.
+
+Given two arrays H and M with complete cycle (or only one branch,... 
+with **ob** kwargs) cpc method should be called so:
+
+    >>> mt.cpc(H,M,Hmin=6000,rhr=1,limx=50,weight='sep',ob=1,clin=0,T=300)
+
+this kwargs and others are defined in method docstring.
+
+
 
 Control figures can be disabled making global variable FIGS False::
 
@@ -42,12 +59,10 @@ numpy, lmfit, matplotlib
 # I should also apologize because the quality of my English. Sorry. GAP.
 # ------------------------------------------------------------------------------
 __author__  = 'Gustavo Pasquevich'
-__version__ = '0.1712xx'  # History at the end of module.
+__version__ = '0.1802xx'  
 _debug      = False
 FIGS        = True
 NUMFIG      = 9000         # variable for function __newfig__
-
- 
 
 def splitcycle(H,M):
     """ Separates an MvsH cycle into two branches.
@@ -110,11 +125,11 @@ def fitfunc(pars, H, data=None, eps=None):
     """
     # unpack parameters:
     # extract .value attribute for each parameter
-    Ms = pars['Ms'].value
-    Xi = pars['Xi'].value
+    Ms  = pars['Ms'].value
+    Xi  = pars['Xi'].value
     ydc = pars['offset'].value
-    a = pars['a'].value
-    b = pars['b'].value
+    a   = pars['a'].value
+    b   = pars['b'].value
 
     y = (Ms*np.sign(H))*(1-abs(a)/abs(H)-abs(b)/H**2) + Xi*H + ydc
 
@@ -218,7 +233,8 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
         pyp.axvline(-limx,color='k')
         pyp.axvline( limx,color='k')
         pyp.xlim([-188,188])
-        pyp.ylim( [ np.min( [ M1[j1].min() , M2[j2].min() ] ) , np.max( [ M1[j1].max() , M2[j2].max() ] ) ] )
+        pyp.ylim( [ np.min( [ M1[j1].min() , M2[j2].min() ] ) , 
+                    np.max( [ M1[j1].max() , M2[j2].max() ] ) ] )
         pyp.axhline(0,color='k')
         pyp.axvline(0,color='k')
         pyp.legend(loc=0)
@@ -271,16 +287,20 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
        
     """
 
-    # Control de entrada, si H esta ordenado de manera que diff H > 0 lo invierte:
-    #INVERT = False      #<<< SUPUESTA VARIABLE INSERVIBLE
+    # Income control. ---------------------------------------------------------
+    # ----------------
+    # --- H must be a growing list, if the last element is lower than the first, 
+    # then the order is inverted.
     if H[-1] > H[0]:
         H = H[::-1]
         M = M[::-1]
-        #INVERT = True    #<<< SUPUESTA VARIABLE INSERVIBLE
 
+    # E must exist for the routine, if None is created as a list of ones. 
     if E is None:
         E = np.ones(H.size)
+    # -------------------------------------------------------------------------
 
+        
     H_LIM_1, H_LIM_2 = HLIM # BUSCAMOS INDICES INICIO Y FINAL REGIONES DE SATURACIÓN.
                             # Las rectas de aprox. lineal se tomaran analizando el ciclo
                             # entre los campos H_LIM_2 y H_LIM_1.
@@ -548,11 +568,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         H1,M1,H2,M2 = splitcycle(H,M)
     
     if rhr:
-        print 'rhr1'
         H1 = remove_H_remanent(H1,M1)
-        print 'rhr2'
         H2 = remove_H_remanent(H2,M2)
-
 
     H1max = max(np.abs(H1))
     H2max = max(np.abs(H2))
@@ -713,31 +730,5 @@ def __newfig__(num=None):
         pyp.figure(num)
         pyp.cla()
 
-# ==============================================================================
-# Historial de versiones
-# =======================
-# 1712xx     Se subió a github, el versionado sigue desde ahí. 
-# 171129     Se modifican docstrings pensando en subirlo a github
-# 171031     Se agregan lineas al docstring. También hace unas semasn se agregó
-#            el cálculo de Chantrell. 
-# 1603       Inicio de mvsh_tools. Antes fuertemente heredado de mvsh_removepara.py
-#
-# 151211     CAMBIO IMPORTANTE se modifica para tener en cuenta cambio del 
-#            funcionamiento de lmfit. Ahora funciona con la version 0.9.1. 
-#            La diferencia esta en donde se encuentra el resultado del ajsute. 
-#            lmfit cambia esa posición de la verisión posterior a la nueva. 
-#            Todos los cambios ocurrieron en "linealcontribution"
-#           
-#            Se agrega diccionario *initial* a "linealcontribution".
-#
-# 150920     Mejoro el docstring de removepara y agrego líneas de Ms en la 
-#            figura 9000.
-#            Agrego la variable __version__
-#               
-# 28/11/13   Corrijo linealcontribution que tenía problemas con L1 y L2. Al final
-#            parece que estaba bien. Así que quedo igual que antes, 
-#            pero mejor explicado.
-#            Cambio la rutina de ajuste de scipy.leastq a lmfit. 
-#            Agrego el kwarg fixed a linealcontribution
 
 
