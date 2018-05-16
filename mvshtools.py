@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 #coding: utf-8
 
-import matplotlib.pyplot as pyp
-import numpy as np
-import lmfit
-
 """ 
 **********
 mvshtools
@@ -52,6 +48,11 @@ numpy, lmfit, matplotlib
 
 
 """
+
+import matplotlib.pyplot as pyp
+import numpy as np
+import lmfit
+
 
 # ------------------------------------------------------------------------------
 # I have make a big effort to put all the docstrings
@@ -161,7 +162,7 @@ def __fourpoints__(P1,P2,P3,P4):
 
 
     for k in [P1,P2,P3,P4]:
-        #print 'puntos del triángulo::::: ',k
+        #print 'triangle points::::: ',k
         if FIGS:
             pyp.plot(k[0],k[1],'o')
     # vector a = P1P2 con origen en P1 y punto final en P2
@@ -305,7 +306,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
                             # Las rectas de aprox. lineal se tomaran analizando el ciclo
                             # entre los campos H_LIM_2 y H_LIM_1.
     
-    # L1 es el límite de alto campo. L1a corresponde a la región de campos positivos
+    # L1 es el limite de alto campo. L1a corresponde a la region de campos positivos
     # y L1b a la de negativos.
     if H_LIM_1 >= max(abs(H)):
         L1a = 0
@@ -344,7 +345,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
     # inicio del trabajo con lmfit ----------------------------
     # 
-    # Armamos diccionario de parámetros. lmfit.Parameters
+    # Armamos diccionario de parametros. lmfit.Parameters
     params = lmfit.Parameters()
     params.add_many(('Ms',salto/2., True, None,None,None),
                     ('Xi',pendiente,True, None,None,None),
@@ -352,7 +353,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
                     ('a',0.0079,True, None,None,None),
                     ('b',0.0001,True, None,None,None))
 
-    # Se fijan y definen los parámetros segun las entrdas *fixed* y *initial*
+    # Se fijan y definen los parametros segun las entrdas *fixed* y *initial*
     for k in initial.keys():
         params[k].value = initial[k]
     for k in fixed.keys():
@@ -378,7 +379,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     for k in params.values():
         print k 
 
-    lmfit.report_fit(out.params) # imprime reporte de los parámetros y el ajsute
+    lmfit.report_fit(out.params) # imprime reporte de los parametros y el ajsute
 
 
     if FIGS:
@@ -399,13 +400,13 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
         H y M corresponden a un ciclo completo. Es decir H comienza y termina
         en el mismo valor (o un valor aproximado).
 
-        El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, según:: 
+        El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, defined by:: 
 
             H1,M1: curva con dH/dt < 0. El campo decrece con el tiempo.
             H2,M2: curva con dH/dt > 0. El campo aumenta con el tiempo.
 
-        Con la variable global FIGS = True muestra gráficas intermedias del 
-        proceso de determinación y eliminación de la contribución lineal.
+        Con la variable global FIGS = True shows intermediate states of  
+        proceso de determinarion y linear contribution removing.
 
         La Figura 249 muestra las posiciones Hmin y Hmax en el ciclo. 
 
@@ -501,10 +502,10 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         T:      Temperature used for Chanterell calculations,
         limx :  max H field for calculation dM/dH at H=0.
         weight: String que indica el modo de tomar el peso de los datos en el 
-                ajuste del comportamiento asintótico.
+                ajuste del  asymptotics behaviour.
                     'None': Sin peso (o peso uniforme).
-                    'sep' : inversamente proporcional a la separación entre 
-                            puntos.
+                    'sep' : inverse proportional to separation between points 
+                            H-value.
         rhr:    remove-H-remanenet. Before the analysis shift the values of H so 
                 they not have remanent field. That is acceptable is measurement 
                 provides of an SQUID, and is known that the sample behaves like
@@ -528,7 +529,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
         <mu>    = magnetic moment (mean value of 1st and 2nd branches results) 
                                    and mean difference for uncertainty).   
-        sqrt(<mu^2>) =   
+        sqrt(<mu^2>) = (what it means)  
         N       = mean value of N obtained from both branches. 
         rho     = <mu>^2/<mu^2>  (as defined by Allia et al.)
         STD     = standar deviation of moments distribution sqrt( <mu^2>-<mu>^2 )
@@ -538,7 +539,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         <mu>_mu = mean magnetic moment according moment-distribution. 
 
 
-        El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, según:: 
+        El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, defined by:: 
 
             H1,M1: curva con dH/dt < 0. El campo decrece con el tiempo.
             H2,M2: curva con dH/dt > 0. El campo aumenta con el tiempo.
@@ -553,8 +554,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
         The function has been called first as the first author of the paper
         in which is base on. However, I thought it wasn't correct name only one 
-        of the names of a three authors of the paper. So the functon name was 
-        named by the first letter of each one of the authors: **cpc**. 
+        of the names of a three authors of the paper. So the functon was 
+        then named with the first letter of each one of the authors: **cpc**. 
 
                
     """
