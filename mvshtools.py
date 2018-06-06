@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ 
 **********
@@ -9,16 +9,17 @@ mvshtools
 Simple tools for MvsH cycle operation
 --------------------------------------
 
-This python-module gives some tools to quantitatively analyse magnetisation vs. 
+This python-module gives some tools to quantitatively analyze magnetization vs. 
 magnetic-applied-field cycles.
 
-    i-   Split conventional two branches loops into two independent branches.
-    ii-  Retrieve magnetisation saturation using asymptotic behaviour. 
-    iii- Calculate (and remove) the superimposed lineal contribution. (:func:`removepara`)
-    iv-  Calculate coercivity field.
-    v-   Calculate initial susceptibility. 
-    iv-  Obtain relevant parameters of Langevin-lik cycle by Chantrell 
-         Popplewelwell and Charles analysis (:func:`cpc`)         
+    i.   Split conventional two branches loops into two independent branches.
+    ii.  Retrieve magnetisation saturation using asymptotic behaviour. 
+    iii. Calculate (and remove) the superimposed lineal contribution. 
+         (:func:`removepara`)
+    iv.  Calculate coercivity field.
+    v.   Calculate initial susceptibility. 
+    vi.  Obtain relevant parameters of Langevin-lik cycle by Chantrell 
+         Popplewell and Charles analysis (:func:`cpc`)         
 
 --------------------------------------
 cpc method
@@ -27,13 +28,12 @@ The most used method on this module might be the cpc method. Which
 allows obtain <mu> and <mu^2> form near zero and asymptotic behaviour of
 Langevin-like magnetic cycle.
 
-Given two arrays H and M with complete cycle (or only one branch,... 
-with **ob** kwargs) cpc method should be called so:
+Given two arrays H and M with complete cycle, cpc method should 
+be called so:
 
     >>> mt.cpc(H,M,Hmin=6000,rhr=1,limx=50,weight='sep',ob=1,clin=0,T=300)
 
-this kwargs and others are defined in method docstring.
-
+these kwargs as well others are defined in the method docstring.
 
 
 Control figures can be disabled making global variable FIGS False::
@@ -71,7 +71,8 @@ def splitcycle(H,M):
         H and M  are expect to be close MvsH cycle,  without  initial 
         magentisation curve. Both are  lists or numpy.arrays of the same length.
 
-        Returns:: 
+        Returns:
+        ========
             
             H1, M1, H2, M2 
     
@@ -191,15 +192,18 @@ def __fourpoints__(P1,P2,P3,P4):
 
 
 def Xi_and_Hc(H1,M1,H2,M2,limx=188):
-    """ Initial susceptibility and coercive magnetic field.
+    """ Calculates the initial susceptibility and coercive magnetic field.
 
-        args:
+        Args:
+        =====    
         H1,M1 determine the cycle downward-branch [dH/dt < 0] 
         H2,M2 determine the cycle rising-branch [dH/dt >0] 
 
-        kwarg:
+        Kwarg:
+        ======    
         limx, H-limit to perform the linear fit. It is performed 
               in [-limx,limx]. 
+              
        """
 
     j1 = np.where(np.abs(H1)<limx)[0]
@@ -221,7 +225,7 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
     print ' Zero croosing magnetic field, H at M=0: '
     print ' [dH/dt<0--branch]:', -p1[0]/p1[1] 
     print ' [dH/dt>0--branch]:', -p2[0]/p2[1]
-    print ' mean-half-difference: (Hc1-Hc2)/2: Hc=',Hc,'Oe'
+    print ' mean-half-difference: (Hc1-Hc2)/2: Hc= %f Oe'%Hc
     print '=============================================='
 
     if FIGS:
@@ -247,12 +251,12 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
 def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
                        fixed=dict(),initial=dict()):
     """
-    This function determines the lineal contribution in the M vs H curve. As 
+    This function determines the lineal contribution in the M vs H curve, as 
     well as the asymptotic behaviour at high fields. See :func:`fitfunc`.
 
     Returns
     =======
-    lmfit.Parameter instance result of the tail-branch fit of magnetisation 
+    lmfit.Parameter instance result of the tail-branch fit of magnetization 
     curve with :func:`fit func`
 
     IMPORTANT
@@ -273,7 +277,8 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
     kwargs:
     -------
-    1) eps: weight values for fitting process. Numpy-array same size as **H**. 
+    1) E:     weight values for fitting process. Numpy-array same size 
+              as **H**. 
     1) label: label for the figures. kwarg for pyplot.plot(). 
               [FIGS global variable should be True]
     2) fixed: dictionary with the parameters that should be fixed:
@@ -306,8 +311,8 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
                             # Las rectas de aprox. lineal se tomaran analizando el ciclo
                             # entre los campos H_LIM_2 y H_LIM_1.
     
-    # L1 es el limite de alto campo. L1a corresponde a la region de campos positivos
-    # y L1b a la de negativos.
+    # L1 es el limite de alto campo. L1a corresponde a la region de campos 
+    # positivos y L1b a la de negativos.
     if H_LIM_1 >= max(abs(H)):
         L1a = 0
         L1b = len(H)-1
@@ -315,8 +320,8 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
         L1a = np.where( H > H_LIM_1)[0][-1]        
         L1b = np.where( H < -H_LIM_1)[0][0]
 
-    # L2 es el limite de bajo campo. L2a corresponde a la region de campos positivos
-    # y L2b a la de negativos.
+    # L2 es el limite de bajo campo. L2a corresponde a la region de campos 
+    # positivos y L2b a la de negativos.
     L2a = np.where( H > H_LIM_2)[0][-1]     
     L2b = np.where( H < -H_LIM_2)[0][0]
 
@@ -364,11 +369,11 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
 
     if FIGS:
-        __newfig__(250)
-        pyp.axvline(H[L1a],color='k')
-        pyp.axvline(H[L1b],color='k')
-        pyp.axvline(H[L2a],color='r')
-        pyp.axvline(H[L2b],color='r')
+        __newfig__()
+        ax = pyp.gca()
+        ax.axvspan(H_LIM_1,H_LIM_2,color='yellow',alpha=0.5)
+        ax.axvspan(-H_LIM_1,-H_LIM_2,color='yellow',alpha=0.5)
+
         pyp.plot(H,M,'.')
         pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
 
@@ -383,7 +388,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
 
     if FIGS:
-        pyp.plot(h_fit,m_fit,'x',label='selected data to fit')
+        pyp.plot(h_fit,m_fit,'x',label='selected data to be fitted')
         pyp.plot(H,fitfunc(out.params,H),color='k',lw=1,ls='--',label='fitted curve')
         pyp.title(label)
         pyp.ylim([M.min(),M.max()])
@@ -488,32 +493,42 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         kwargs:
         =======
         Hmin,Hmax: 
-                They define the high field region for the asymptotic analysis.
-                **Hmin** can be a value or the string '1/2' (default), which 
-                means is taken as the half of the maximum values of |H|.
-                **Hmax**, can be a value or the string 'max' (default) which 
-                indicates that Hmax must be taken as the maximum of |H|.
+            They define the high field region for the asymptotic analysis. 
+            The high field region is defined so that absolute value of H is 
+            between **Hmin** and **Hmax**.
+                #. **Hmin** can be a value or the string '1/2' (default), which 
+                    means is taken as the half of the maximum values of |H|.
+                #. **Hmax** can be a value or the string 'max' (default) which 
+                    indicates that Hmax must be taken as the maximum of |H|.
 
-        clin:   value of lineal-constant to be take as a fixed parameter.
-                (if None [default], then is fitted) 
+        clin:   
+            value of lineal-constant to be take as a fixed parameter.
+            (if None [default], then is fitted) 
 
-        a:      proposing initial value for "a" parameter in asymptotic process.
+        a:      
+            proposing initial value for "a" parameter in asymptotic process.
  
-        T:      Temperature used for Chanterell calculations,
-        limx :  max H field for calculation dM/dH at H=0.
-        weight: String que indica el modo de tomar el peso de los datos en el 
-                ajuste del  asymptotics behaviour.
-                    'None': Sin peso (o peso uniforme).
-                    'sep' : inverse proportional to separation between points 
-                            H-value.
-        rhr:    remove-H-remanenet. Before the analysis shift the values of H so 
-                they not have remanent field. That is acceptable is measurement 
-                provides of an SQUID, and is known that the sample behaves like
-                superparamagnet. However here is only a technical parameter 
-                to better suceptibility at low fields.
+        T:      
+            Temperature used for Chanterell calculations,
+        limx:  
+            max H field for calculation dM/dH at H=0.
+        weight: 
+            String que indica el modo de tomar el peso de los datos en el 
+            ajuste del  asymptotics behaviour.
+                'None': 
+                    Sin peso (o peso uniforme).
+                'sep' : 
+                    inverse proportional to separation between points H-value.
+        rhr:    
+            remove-H-remanenet. Before the analysis shift the values of H so 
+            they not have remanent field. That is acceptable is measurement 
+            provides of an SQUID, and is known that the sample behaves like
+            superparamagnet. However here is only a technical parameter 
+            to better suceptibility at low fields.
 
-        ob:     {False} or True. ob = one-branch. Is true if in H and M vectors 
-                correspond only to a branch.  
+        ob:     
+            {False} or True. ob = one-branch. Is true if in H and M vectors 
+            correspond only to a branch.  
 
         Returns: 
         ========
@@ -563,7 +578,9 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     kB  = 1.3806488e-16  #erg/K Boltzmann Constant in cgs units
     muB = 9.27400968e-21 #erg/G Bohr Magneton in cgs units.
 
-    if ob:
+    # Very strange method to resolve situation were there is only a branch. It
+    # should be improved
+    if ob:  
         H1,H2,M1,M2 = H, H, M ,M
     else:    
         H1,M1,H2,M2 = splitcycle(H,M)
@@ -676,7 +693,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
     return H1,M1,H2,M2,[pend,salto,desp],mu,N,mumu
 
-def remove_H_remanent(H,M):
+def remove_H_remanent(H,M,limx=None):
     """ Removes the remanent applied magnetic field. Removes coercive field by 
         by simple **Hc** subtraction. This function should be used only if 
         correspond.
@@ -685,13 +702,27 @@ def remove_H_remanent(H,M):
         ----------
         **H** and **M** should be an unique branch. 
         From **M** extract **Hc** and returns **H-Hc**. 
+        
+        kwargs:
+        ------
+        **limx**: region (|**H**| < **limx**) to look for the coercive field. 
+        If not given it use 10% of maximum abs(**H**). 
+        
+        Returns:
+        --------
+        Returns **H** - **Hc**
 
     """
+    
+    if limx is None:
+        limx = max(np.abs(H))*.1
+    j1 = np.where(np.abs(H)<limx)[0]
+    
     def Hr(H,M):
         if np.mean(np.diff(H)<0):
-            Hr = np.interp(0,M[::-1],H[::-1])
+            Hr = np.interp(0,M[j1][::-1],H[j1][::-1])
         elif np.mean(np.diff(H)>0):
-            Hr = np.interp(0,M,H)
+            Hr = np.interp(0,M[j1],H[j1])
         return Hr
 
     H = H-Hr(H,M)
@@ -722,7 +753,7 @@ def __makeEdiff__(H,smallvalue=1e-10 ):
 
 
 def __newfig__(num=None):
-    """ Auxiliar function make new figures."""
+    """ Auxiliar function to make new figures."""
     global NUMFIG
     if num == None:
         pyp.figure(NUMFIG)
