@@ -13,7 +13,7 @@ This python-module gives some tools to quantitatively analyze magnetization vs.
 magnetic-applied-field cycles.
 
     i.   Split conventional two branches loops into two independent branches.
-    ii.  Retrieve magnetisation saturation using asymptotic behaviour. 
+    ii.  Retrieve saturation magnetization using asymptotic behaviour. 
     iii. Calculate (and remove) the superimposed lineal contribution. 
          (:func:`removepara`)
     iv.  Calculate coercivity field.
@@ -31,10 +31,9 @@ Langevin-like magnetic cycle.
 Given two arrays H and M with complete cycle, cpc method should 
 be called so:
 
-    >>> mt.cpc(H,M,Hmin=6000,rhr=1,limx=50,weight='sep',ob=1,clin=0,T=300)
+    >>> mt.cpc(H,M,Hmin=6000,rhr=1,limx=50,weight='sep',ob=1,clin=0,T=300);
 
 these kwargs as well others are defined in the method docstring.
-
 
 Control figures can be disabled making global variable FIGS False::
 
@@ -59,11 +58,12 @@ import lmfit
 # in English. However, most part comments in the code are still in Spanish. 
 # I should also apologize because the quality of my English. Sorry. GAP.
 # ------------------------------------------------------------------------------
-__author__  = 'Gustavo Pasquevich'
-__version__ = '0.1802xx'  
-_debug      = False
-FIGS        = True
-NUMFIG      = 9000         # variable for function __newfig__
+__author__      = 'Gustavo Pasquevich'
+__version__     = '0.1802xx'  
+_debug          = False
+FIGS            = True
+__NUMFIG_DEF__  = 9000
+NUMFIG          = __NUMFIG_DEF__       # variable for function __newfig__
 
 def splitcycle(H,M):
     """ Separates an MvsH cycle into two branches.
@@ -145,7 +145,7 @@ def fitfunc(pars, H, data=None, eps=None):
 
 def __fourpoints__(P1,P2,P3,P4):
     """ Given four points P1, P2 P3 and P4 of the M vs H curve this function
-        obtain approximate characteristics parameters of the curve.
+        obtains approximate characteristics parameters of the curve.
 
 
                              _ ----------     ^
@@ -162,10 +162,15 @@ def __fourpoints__(P1,P2,P3,P4):
     """
 
 
-    for k in [P1,P2,P3,P4]:
-        #print 'triangle points::::: ',k
-        if FIGS:
-            pyp.plot(k[0],k[1],'o')
+
+    if FIGS:
+        # This figure is a bit extrange. It will plot in whatewer was called before
+        # this function was called. 
+        x = [k[0] for k in [P1,P2,P3,P4]]
+        y = [k[1] for k in [P1,P2,P3,P4]]
+        pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
+        pyp.legend(loc=0)
+
     # vector a = P1P2 con origen en P1 y punto final en P2
     a=[P2[0]-P1[0],P2[1]-P1[1]]
     # vector b = P1P3 con origen en P1 y punto final en P3
@@ -325,14 +330,15 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     L2a = np.where( H > H_LIM_2)[0][-1]     
     L2b = np.where( H < -H_LIM_2)[0][0]
 
-    if FIGS:
-        __newfig__(249)
-        pyp.plot(H,M,'.-')
-        pyp.axvline(H[L1a],color='k')
-        pyp.axvline(H[L1b],color='k')
-        pyp.axvline(H[L2a],color='r')
-        pyp.axvline(H[L2b],color='r')
-        pyp.title('Posiciones de las cotas para %s'%label)
+#    if FIGS:
+#        #__newfig__(249)
+#        __newfig__()
+#        pyp.plot(H,M,'.-')
+#        pyp.axvline(H[L1a],color='k')
+#        pyp.axvline(H[L1b],color='k')
+#        pyp.axvline(H[L2a],color='r')
+#        pyp.axvline(H[L2b],color='r')
+#        pyp.title('Posiciones de las cotas para %s'%label)
 
     # Estimation of initial parameters
     salto, pendiente, centro  = __fourpoints__( [H[L1b],M[L1b]],
@@ -368,16 +374,17 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     
 
 
-    if FIGS:
-        __newfig__()
-        ax = pyp.gca()
-        ax.axvspan(H_LIM_1,H_LIM_2,color='yellow',alpha=0.5)
-        ax.axvspan(-H_LIM_1,-H_LIM_2,color='yellow',alpha=0.5)
+#    if FIGS:
+#        __newfig__()
+#        ax = pyp.gca()
+#        ax.axvspan(H_LIM_1,H_LIM_2,color='yellow',alpha=0.5)
+#        ax.axvspan(-H_LIM_1,-H_LIM_2,color='yellow',alpha=0.5)
+#
+#        pyp.plot(H,M,'.')
+#        pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
 
-        pyp.plot(H,M,'.')
-        pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
-
-    out = lmfit.minimize(fitfunc, params, args=(h_fit,m_fit,e_fit), kws=None, method='leastsq')
+    out = lmfit.minimize(fitfunc, params, args=(h_fit,m_fit,e_fit), kws=None, 
+                         method='leastsq')
 
     print 'Information on the pre fit and pos fit parameters'
     print '-------------------------------------------------'
@@ -388,6 +395,13 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
 
     if FIGS:
+        __newfig__()
+        ax = pyp.gca()
+        ax.axvspan(H_LIM_1,H_LIM_2,color='yellow',alpha=0.5)
+        ax.axvspan(-H_LIM_1,-H_LIM_2,color='yellow',alpha=0.5)
+
+        pyp.plot(H,M,'.')
+        pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
         pyp.plot(h_fit,m_fit,'x',label='selected data to be fitted')
         pyp.plot(H,fitfunc(out.params,H),color='k',lw=1,ls='--',label='fitted curve')
         pyp.title(label)
@@ -513,18 +527,20 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         limx:  
             max H field for calculation dM/dH at H=0.
         weight: 
-            String que indica el modo de tomar el peso de los datos en el 
-            ajuste del  asymptotics behaviour.
+            String to indicates the fitting weight for the asymptotics 
+            behaviour fit. It is relevant if there absice points are not 
+            uniformly separated.
                 'None': 
-                    Sin peso (o peso uniforme).
+                    uniform whight.
                 'sep' : 
                     inverse proportional to separation between points H-value.
         rhr:    
-            remove-H-remanenet. Before the analysis shift the values of H so 
-            they not have remanent field. That is acceptable is measurement 
-            provides of an SQUID, and is known that the sample behaves like
-            superparamagnet. However here is only a technical parameter 
-            to better suceptibility at low fields.
+            remove-H-remanenet. Before the analysis, it shift the values of H 
+            so they not have remanent field. That is acceptable if measurement 
+            provides from a SQUID magnetometer, and if it's known that the 
+            sample behaves does not have coercive field. However here is only 
+            a technical parameter to better determine suceptibility at low 
+            fields.
 
         ob:     
             {False} or True. ob = one-branch. Is true if in H and M vectors 
@@ -532,7 +548,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
         Returns: 
         ========
-                H1, M1, H2, M2, [slop,step,offset]
+                H1, M1, H2, M2, [slop,step,offset], mu, N, mumu
 
         Printed Information:
         ====================
@@ -574,6 +590,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
                
     """
+    __newfig__(reset = True)
+    
     # Physics Constants
     kB  = 1.3806488e-16  #erg/K Boltzmann Constant in cgs units
     muB = 9.27400968e-21 #erg/G Bohr Magneton in cgs units.
@@ -617,10 +635,12 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         fixed['Xi'] = clin
     fixed['b']  = 1e-10
     
-    print('\n\nWorking whit dH/dt < 0 branch \n----------------------------- \n')
-    p1 = linealcontribution(H1, M1, [Hmax,Hmin], label='dH/dt < 0', fixed=fixed, E=E1, initial = initial)
-    print('\n\nWorking whit dH/dt > 0 branch \n----------------------------- \n')
-    p2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0',fixed=fixed,E=E2,initial=initial)
+    print('\n\nWorking whit dH/dt < 0 branch \n-----------------------------\n')
+    p1 = linealcontribution(H1, M1, [Hmax,Hmin], label='dH/dt < 0', fixed=fixed, 
+                            E=E1, initial = initial)
+    print('\n\nWorking whit dH/dt > 0 branch \n-----------------------------\n')
+    p2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0',fixed=fixed,
+                            E=E2,initial=initial)
 
 
     pend  = (p1['Xi']     + p2['Xi'])/2.
@@ -651,7 +671,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     print 'X          :',X
 
 
-
+    desp     = (p1['offset'].value + p2['offset'].value)/2.
+    
     mu1      = kB*T/p1['a']/muB
     mu2      = kB*T/p2['a']/muB
     emu      = abs(mu1-mu2)/2. 
@@ -685,8 +706,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
     if FIGS:
         __newfig__()
-        pyp.plot(H1,M1,'b.-',label = 'dH/dt < 0')
-        pyp.plot(H2,M2,'r.-',label = 'dH/dt > 0')
+        pyp.plot(H1,M1-desp,'b.-',label = 'dH/dt < 0')
+        pyp.plot(H2,M2-desp,'r.-',label = 'dH/dt > 0')
         pyp.axhline(salto,color = 'k', alpha =0.5)
         pyp.axhline(-salto,color= 'k', alpha =0.5)
         pyp.legend(loc=0)
@@ -752,11 +773,24 @@ def __makeEdiff__(H,smallvalue=1e-10 ):
     return 1/D
 
 
-def __newfig__(num=None):
-    """ Auxiliar function to make new figures."""
+def __newfig__(num=None,reset=False):
+    """ Auxiliary function to define  new-figures id-numbers.
+
+        kwarg reset: for initialize numebering in default value. Entering by 
+                     this mode, only NUMFIG is reseting. It doesen't create a 
+                     new figure. 
+        kwarg num: skip the fundamental idea of __newfig__, and works exctly 
+        as figure. 
+    """
     global NUMFIG
+
+    if reset:
+        NUMFIG = __NUMFIG_DEF__
+        return
+    
     if num == None:
         pyp.figure(NUMFIG)
+        pyp.cla()
         NUMFIG += 1
     else:
         pyp.figure(num)
