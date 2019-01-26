@@ -61,7 +61,7 @@ import lmfit
 __author__      = 'Gustavo Pasquevich'
 __version__     = '0.1802xx'  
 _debug          = False
-FIGS            = True
+FIGS            = True                
 __NUMFIG_DEF__  = 9000
 NUMFIG          = __NUMFIG_DEF__       # variable for function __newfig__
 
@@ -162,20 +162,6 @@ def __fourpoints__(P1,P2,P3,P4):
     """
 
 
-
-    if FIGS:
-        # This figure is a bit extrange. It will plot in whatewer was called before
-        # this function was called. 
-        x = [k[0] for k in [P1,P2,P3,P4]]
-        y = [k[1] for k in [P1,P2,P3,P4]]
-        pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
-        pyp.legend(loc=0)
-
-    # vector a = P1P2 con origen en P1 y punto final en P2
-    a=[P2[0]-P1[0],P2[1]-P1[1]]
-    # vector b = P1P3 con origen en P1 y punto final en P3
-    b=[P3[0]-P1[0],P3[1]-P1[1]]
-
     x1,y1 = P1
     x2,y2 = P2
     x3,y3 = P3
@@ -192,6 +178,22 @@ def __fourpoints__(P1,P2,P3,P4):
     step = (-d1-d2+d3+d4)/4.
     slope = (slope12 + slope34)/2.
     centro = ((y2-y1)/(x2-x1)*(-x1) + (y3-y4)/(x3-x4)*(-x4) + (y1+y4) )/2.
+    
+    
+    if FIGS:
+        # This figure is a bit strange. It will be plotted in whatewer was 
+        # called before this function was called. 
+        x = np.array([k[0] for k in [P1,P2,P3,P4]])
+        y = np.array([k[1] for k in [P1,P2,P3,P4]])
+        pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
+        pyp.plot([0,0],[-step/2+centro,step/2+centro],color='k')
+        xp = np.array([0,max(x)])
+        xm = np.array([min(x),0])
+        pyp.plot(xp, step/2+xp*slope + centro,color = 'k')
+        pyp.plot(xm,-step/2+xm*slope + centro,color = 'k')
+        pyp.axhline(0,ls='--',color='k')
+
+        pyp.legend(loc=0)
 
     return step, slope, centro
 
@@ -251,12 +253,8 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
 
     return X,Hc
 
-
-# INICIO PROCESO DE AJUSTE RAMA dH/dt < 0 *************************************
-def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
-                       fixed=dict(),initial=dict()):
-    """
-    This function determines the lineal contribution in the M vs H curve, as 
+def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',fixed=dict(),initial=dict()):
+    """ This function determines the lineal contribution in the M vs H curve, as 
     well as the asymptotic behaviour at high fields. See :func:`fitfunc`.
 
     Returns
@@ -264,9 +262,11 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     lmfit.Parameter instance result of the tail-branch fit of magnetization 
     curve with :func:`fit func`
 
+    =========
     IMPORTANT
-    ========= 
-    **H** and **M** input arguments corresponds only to one of the two 
+    =========
+    
+    **H** and **M** input arguments corresponds only to **one** of the two 
     MvsH-cycle branches. For a complete cycle it should be called twice, one 
     time for each branch. 
 
@@ -299,64 +299,62 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     """
 
     # Income control. ---------------------------------------------------------
-    # ----------------
+    # --- H,M should be only one branch. (monotonous behaviour test)
+    if len(np.unique(np.sign(np.diff(H)))) != 1:
+        raise ValueError('Income H parameter should be monotonous (only one brnach)')
     # --- H must be a growing list, if the last element is lower than the first, 
     # then the order is inverted.
-    if H[-1] > H[0]:
+    if H[-1] < H[0]:    # VERY SENSITIVE ERROR!!!! (before 1/2019 ">")
         H = H[::-1]
         M = M[::-1]
 
-    # E must exist for the routine, if None is created as a list of ones. 
+    # E must exist for this routine, if None is created as a list of ones. 
+    # Thata is: default = uniform wheight.
     if E is None:
         E = np.ones(H.size)
     # -------------------------------------------------------------------------
 
-        
-    H_LIM_1, H_LIM_2 = HLIM # BUSCAMOS INDICES INICIO Y FINAL REGIONES DE SATURACIÓN.
-                            # Las rectas de aprox. lineal se tomaran analizando el ciclo
-                            # entre los campos H_LIM_2 y H_LIM_1.
+    # ======= DEFINNIG INDEXES ------------------------------------------------    
+    # H_LIM_1 and 2 are whish limits. L1a, L2a, L2b and L1b are index in H that
+    # satisfies this condition, going from lower H to highre H. j are the index
+    # where H_LIM_2<|H|<H_LIM_1.
     
+    H_LIM_1, H_LIM_2 = HLIM 
+
     # L1 es el limite de alto campo. L1a corresponde a la region de campos 
     # positivos y L1b a la de negativos.
     if H_LIM_1 >= max(abs(H)):
         L1a = 0
         L1b = len(H)-1
     else:
-        L1a = np.where( H > H_LIM_1)[0][-1]        
-        L1b = np.where( H < -H_LIM_1)[0][0]
+        L1a = np.where( H >= -H_LIM_1)[0][0]
+        L1b = np.where( H <= H_LIM_1)[0][-1]        
 
-    # L2 es el limite de bajo campo. L2a corresponde a la region de campos 
-    # positivos y L2b a la de negativos.
-    L2a = np.where( H > H_LIM_2)[0][-1]     
-    L2b = np.where( H < -H_LIM_2)[0][0]
+    # L2 is the low-field limit. L2a correspond to positive fields while L1a
+    # to negative ones.
+    L2a = np.where( H <= -H_LIM_2)[0][-1]
+    L2b = np.where( H >= H_LIM_2)[0][0]     
 
-#    if FIGS:
-#        #__newfig__(249)
-#        __newfig__()
-#        pyp.plot(H,M,'.-')
-#        pyp.axvline(H[L1a],color='k')
-#        pyp.axvline(H[L1b],color='k')
-#        pyp.axvline(H[L2a],color='r')
-#        pyp.axvline(H[L2b],color='r')
-#        pyp.title('Posiciones de las cotas para %s'%label)
+    j = np.where( (np.abs(H) <= H_LIM_1) & (np.abs(H) >= H_LIM_2) )[0]
+    # --- END INDEXES DEFINITION ---------------------------------------------- 
 
     # Estimation of initial parameters
-    salto, pendiente, centro  = __fourpoints__( [H[L1b],M[L1b]],
-                                              [H[L2b],M[L2b]],
-                                              [H[L2a],M[L2a]],
-                                              [H[L1a],M[L1a]])
+    if FIGS:
+        # This figure is used as a previus figure definition to be used by 
+        # __four__points function. 
+        __newfig__()
+        pyp.plot(H,M,'.-',color='gray')
+        pyp.title('4points for initial parameters guessing')
+    P1,P2,P3,P4 = [[H[k],M[k]] for k in [L1a,L2a,L2b,L1b]]
+    salto, pendiente, centro  = __fourpoints__(P1,P2,P3,P4)
         
-    #pini = [ salto/2.,pendiente, centro, 0.0001, 0.0001]
 
-
-
-    h_fit = np.concatenate([H[L1a:L2a],H[L2b:L1b]])
-    m_fit = np.concatenate([M[L1a:L2a],M[L2b:L1b]])
-    e_fit = np.concatenate([E[L1a:L2a],E[L2b:L1b]])
-
-    # inicio del trabajo con lmfit ----------------------------
+    h_fit = H[j]
+    m_fit = M[j]
+    e_fit = E[j]
+    # INITIATING LMFIT ------------------------------------
     # 
-    # Armamos diccionario de parametros. lmfit.Parameters
+    # Building parameteters dictionary. lmfit.Parameters
     params = lmfit.Parameters()
     params.add_many(('Ms',salto/2., True, None,None,None),
                     ('Xi',pendiente,True, None,None,None),
@@ -372,17 +370,6 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
         if fixed[k] != None:
             params[k].value = fixed[k]
     
-
-
-#    if FIGS:
-#        __newfig__()
-#        ax = pyp.gca()
-#        ax.axvspan(H_LIM_1,H_LIM_2,color='yellow',alpha=0.5)
-#        ax.axvspan(-H_LIM_1,-H_LIM_2,color='yellow',alpha=0.5)
-#
-#        pyp.plot(H,M,'.')
-#        pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
-
     out = lmfit.minimize(fitfunc, params, args=(h_fit,m_fit,e_fit), kws=None, 
                          method='leastsq')
 
@@ -391,8 +378,7 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
     for k in params.values():
         print k 
 
-    lmfit.report_fit(out.params) # imprime reporte de los parametros y el ajsute
-
+    lmfit.report_fit(out.params) # print fit report
 
     if FIGS:
         __newfig__()
@@ -402,11 +388,15 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
 
         pyp.plot(H,M,'.')
         pyp.plot(H,fitfunc(params,H),'-r',lw=2,alpha=0.8,label='pre fit curve')
-        pyp.plot(h_fit,m_fit,'x',label='selected data to be fitted')
+        pyp.plot(h_fit,m_fit,'x',label='selected data to be fitted',ms=10.)
         pyp.plot(H,fitfunc(out.params,H),color='k',lw=1,ls='--',label='fitted curve')
         pyp.title(label)
         pyp.ylim([M.min(),M.max()])
         pyp.ylim([M.min(),M.max()])
+        x = [k[0] for k in [P1,P2,P3,P4]]
+        y = [k[1] for k in [P1,P2,P3,P4]]
+        pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
+       
         pyp.legend(loc=0)
     
     return out.params
@@ -416,8 +406,8 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
     """ Retrieve lineal contribution to cycle and remove it from cycle.
 
 
-        H y M corresponden a un ciclo completo. Es decir H comienza y termina
-        en el mismo valor (o un valor aproximado).
+        **H** y **M** corresponds to entire cycle (two branches). I.e. **H** starts and 
+        ends at the same value (or an aproximate value).
 
         El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, defined by:: 
 
@@ -531,7 +521,7 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
             behaviour fit. It is relevant if there absice points are not 
             uniformly separated.
                 'None': 
-                    uniform whight.
+                    uniform wheight.
                 'sep' : 
                     inverse proportional to separation between points H-value.
         rhr:    
@@ -616,6 +606,12 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         Hmin = 0.5*max(H1max,H2max)
 
      
+    # Low magnetic field analysis===============================================    
+    X,HC = Xi_and_Hc(H1,M1,H2,M2,limx=limx)
+
+    # ==========================================================================
+    #Tail zone analysis of tail zone 
+
     if weight == 'sep':
         E1 = __makeEdiff__(H1)
         E2 = __makeEdiff__(H2)
@@ -623,11 +619,6 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         E1 = None
         E2 = None
 
-    # Low magnetic field analysis===============================================    
-    X,HC = Xi_and_Hc(H1,M1,H2,M2,limx=limx)
-
-    # ==========================================================================
-    #Tail zone analysis of tail zone 
     fixed = dict()
     initial=dict()
     initial['a']=aini
@@ -776,11 +767,15 @@ def __makeEdiff__(H,smallvalue=1e-10 ):
 def __newfig__(num=None,reset=False):
     """ Auxiliary function to define  new-figures id-numbers.
 
-        kwarg reset: for initialize numebering in default value. Entering by 
-                     this mode, only NUMFIG is reseting. It doesen't create a 
-                     new figure. 
-        kwarg num: skip the fundamental idea of __newfig__, and works exctly 
-        as figure. 
+        kwargs
+        ------
+        reset: 
+            for initialize numebering in default value. Entering by 
+            this mode, only NUMFIG is reseting. It doesen't create a 
+            new figure. 
+        num: 
+            skip the fundamental idea of __newfig__, and works exctly 
+            as figure. 
     """
     global NUMFIG
 
@@ -796,5 +791,6 @@ def __newfig__(num=None,reset=False):
         pyp.figure(num)
         pyp.cla()
 
+    return NUMFIG
 
 
