@@ -35,10 +35,14 @@ be called so:
 
 these kwargs as well others are defined in the method docstring.
 
-Control figures can be disabled making global variable FIGS False::
+Control figures and prints can be disabled making global variable FIGS 
+and PRINT False::
 
     >>> mvshtools.FIGS = False
 
+or::
+    
+    >>> mvshtools.PRINT = False
 
 
 Dependencies
@@ -47,7 +51,10 @@ numpy, lmfit, matplotlib
 
 
 """
+from __future__ import division
+from __future__ import print_function
 
+from builtins import object
 import matplotlib.pyplot as pyp
 import numpy as np
 import lmfit
@@ -55,37 +62,38 @@ import lmfit
 
 # ------------------------------------------------------------------------------
 # I have make a big effort to put all the docstrings
-# in English. However, most part comments in the code are still in Spanish. 
-# I should also apologize because the quality of my English. Sorry. GAP.
+# in English. However, a lot of comments in the code are still in Spanish. 
 # ------------------------------------------------------------------------------
 __author__      = 'Gustavo Pasquevich'
-__version__     = '0.1802xx'  
+__version__     = '0.190129'  
 _debug          = False
-FIGS            = True                
+FIGS            = True
+PRINT           = True                
 __NUMFIG_DEF__  = 9000
 NUMFIG          = __NUMFIG_DEF__       # variable for function __newfig__
 
 def splitcycle(H,M):
-    """ Separates an MvsH cycle into two branches.
+    """ Split a **M** vs **H** cycle into two branches.
 
-        H and M  are expect to be close MvsH cycle,  without  initial 
-        magentisation curve. Both are  lists or numpy.arrays of the same length.
+        **H** and **M**  are expect to be close MvsH cycle,  without  
+        initial magentisation curve. Both are  lists or numpy.arrays 
+        of the same length.
 
         Returns:
         ========
             
-            H1, M1, H2, M2 
+        H1, M1, H2, M2 
     
-        where "1" indicate negative  dH/dt branch while "2" indicate the other 
-        one.
+        where "1" indicate negative  dH/dt branch while "2" indicate the 
+	positive dH/dt branch.
     """
     # H1 y M1 is the branch froom H_max to H_min, while H2 and M2 is the branch
     # from H_min to H_max.
      
-    if H[0] > H[len(H)/2]:     # Rama inicial decreciente
+    if H[0] > H[int(len(H)/2)]:     # Rama inicial decreciente
         _ind_ret = np.where(H == min(H))[0]
         if _debug:
-            print _ind_ret
+            print(_ind_ret)
         if len(_ind_ret) == 2:
             if (_ind_ret[1]-_ind_ret[0]) == 1:
                 i0 = _ind_ret[0]
@@ -95,7 +103,7 @@ def splitcycle(H,M):
             i1 = i0
 
         if _debug:
-            print i0, i1
+            print((i0, i1))
 
         H1 = H[:i0+1]
         M1 = M[:i0+1]
@@ -145,11 +153,11 @@ def fitfunc(pars, H, data=None, eps=None):
 
 def __fourpoints__(P1,P2,P3,P4):
     """ Given four points P1, P2 P3 and P4 of the M vs H curve this function
-        obtains approximate characteristics parameters of the curve.
+        obtains approximate characteristics parameters of the curve::
 
 
                              _ ----------     ^
-                            / P3       P4     | 
+                            - P3       P4     | 
                            /                  | Step
                          _-                   | 
                 --------                      |
@@ -179,18 +187,17 @@ def __fourpoints__(P1,P2,P3,P4):
     slope = (slope12 + slope34)/2.
     centro = ((y2-y1)/(x2-x1)*(-x1) + (y3-y4)/(x3-x4)*(-x4) + (y1+y4) )/2.
     
-    
     if FIGS:
         # This figure is a bit strange. It will be plotted in whatewer was 
         # called before this function was called. 
         x = np.array([k[0] for k in [P1,P2,P3,P4]])
         y = np.array([k[1] for k in [P1,P2,P3,P4]])
         pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
-        pyp.plot([0,0],[-step/2+centro,step/2+centro],color='k')
+        pyp.plot([0,0],[-step/2 + centro, step/2+centro],color='k')
         xp = np.array([0,max(x)])
         xm = np.array([min(x),0])
-        pyp.plot(xp, step/2+xp*slope + centro,color = 'k')
-        pyp.plot(xm,-step/2+xm*slope + centro,color = 'k')
+        pyp.plot(xp, step/2 +xp*slope + centro,color = 'k')
+        pyp.plot(xm,-step/2 +xm*slope + centro,color = 'k')
         pyp.axhline(0,ls='--',color='k')
 
         pyp.legend(loc=0)
@@ -198,13 +205,17 @@ def __fourpoints__(P1,P2,P3,P4):
     return step, slope, centro
 
 
-def Xi_and_Hc(H1,M1,H2,M2,limx=188):
+def Xi_and_Hc(H1,M1,H2=None,M2=None,limx=188):
     """ Calculates the initial susceptibility and coercive magnetic field.
 
         Args:
         =====    
-        H1,M1 determine the cycle downward-branch [dH/dt < 0] 
-        H2,M2 determine the cycle rising-branch [dH/dt >0] 
+        H1,M1 determines the complete cycle or 
+              the cycle downward-branch [dH/dt < 0]
+        
+        H2,M2 determines the cycle rising-branch [dH/dt >0] 
+        
+        If H2 and M2 are None H1 and M1 are taken as H and M of complet cycle.
 
         Kwarg:
         ======    
@@ -212,6 +223,9 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
               in [-limx,limx]. 
               
        """
+    if H2 is None:
+        H1,M1,H2,M2 = splitcycle(H1, M1)
+
 
     j1 = np.where(np.abs(H1)<limx)[0]
     p1 = np.poly1d(np.polyfit(H1[j1],M1[j1],1))
@@ -219,21 +233,22 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
     p2 = np.poly1d(np.polyfit(H2[j2],M2[j2],1))
 
     X = np.mean([p1[1],p2[1]])
-    Hc = (-p2[0]/p2[1]+p1[0]/p1[1] )/2.
-
-    print '=============================================='
-    print 'Initial Susceptibility and coercive field' 
-    print '----------------------------------------------'
-    print ' SLOPE: dM/dH at M=0:                         '
-    print ' [dH/dt<0--branch] :', p1[1]
-    print ' [dH/dt>0--branch] :', p2[1]
-    print ' mean slope:       :', X
-    print '                                              '
-    print ' Zero croosing magnetic field, H at M=0: '
-    print ' [dH/dt<0--branch]:', -p1[0]/p1[1] 
-    print ' [dH/dt>0--branch]:', -p2[0]/p2[1]
-    print ' mean-half-difference: (Hc1-Hc2)/2: Hc= %f Oe'%Hc
-    print '=============================================='
+    Hc = (-p2[0]/p2[1] + p1[0]/p1[1] ) /2.
+    
+    if PRINT:
+        print('==============================================')
+        print('Initial Susceptibility and coercive field') 
+        print('----------------------------------------------')
+        print(' SLOPE: dM/dH at M=0:                         ')
+        print(' [dH/dt<0--branch] :', p1[1])
+        print(' [dH/dt>0--branch] :', p2[1])
+        print(' mean slope:       :', X)
+        print('                                              ')
+        print(' Zero croosing magnetic field, H at M=0: ')
+        print(' [dH/dt<0--branch]:', -p1[0]/p1[1]) 
+        print(' [dH/dt>0--branch]:', -p2[0]/p2[1])
+        print(' mean-half-difference: (Hc1-Hc2)/2: Hc= %f Oe'%Hc)
+        print('==============================================')
 
     if FIGS:
         __newfig__(500)
@@ -253,9 +268,11 @@ def Xi_and_Hc(H1,M1,H2,M2,limx=188):
 
     return X,Hc
 
-def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',fixed=dict(),initial=dict()):
-    """ This function determines the lineal contribution in the M vs H curve, as 
-    well as the asymptotic behaviour at high fields. See :func:`fitfunc`.
+def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',
+                       fixed=dict(),initial=dict(),
+                       output=-1):
+    """ This function determines the lineal contribution in the M vs H curve, 
+    as well as the asymptotic behaviour at high fields. See :func:`fitfunc`.
 
     Returns
     =======
@@ -294,14 +311,17 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',fixed=dict(),i
               that the value of the parameters is the automatically obtained 
               but it should be a fix parameter.
     3) initial: dictionary with initial values. If None (or not defined) then 
-              they are guessed.              
-       
+              they are guessed.
+    
+    4) output: kind of output, (0 or -1) out.params or (1) out. (v 0.190129)
+               Note: output is set to -1 as default to achive  backward 
+               compatibility. But it should be changed in future to 1. 
     """
 
     # Income control. ---------------------------------------------------------
     # --- H,M should be only one branch. (monotonous behaviour test)
     if len(np.unique(np.sign(np.diff(H)))) != 1:
-        raise ValueError('Income H parameter should be monotonous (only one brnach)')
+        raise ValueError('Income H parameter should be monotonous (only one branch)')
     # --- H must be a growing list, if the last element is lower than the first, 
     # then the order is inverted.
     if H[-1] < H[0]:    # VERY SENSITIVE ERROR!!!! (before 1/2019 ">")
@@ -363,22 +383,26 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',fixed=dict(),i
                     ('b',0.0001,True, None,None,None))
 
     # Se fijan y definen los parametros segun las entrdas *fixed* y *initial*
-    for k in initial.keys():
+    for k in list(initial.keys()):
         params[k].value = initial[k]
-    for k in fixed.keys():
+    for k in list(fixed.keys()):
         params[k].vary = False
         if fixed[k] != None:
             params[k].value = fixed[k]
     
     out = lmfit.minimize(fitfunc, params, args=(h_fit,m_fit,e_fit), kws=None, 
                          method='leastsq')
+    out.dataX = h_fit
+    out.dataY = m_fit
+    out.dataE = e_fit
 
-    print 'Information on the pre fit and pos fit parameters'
-    print '-------------------------------------------------'
-    for k in params.values():
-        print k 
-
-    lmfit.report_fit(out.params) # print fit report
+    if PRINT:
+        print(PRINT)
+        print('Information on the pre fit and pos fit parameters')
+        print('-------------------------------------------------')
+        for k in list(params.values()):
+            print(k) 
+        lmfit.report_fit(out.params) # print fit report
 
     if FIGS:
         __newfig__()
@@ -396,18 +420,26 @@ def linealcontribution(H,M,HLIM,E=None,label = 'The M vs H Curve',fixed=dict(),i
         x = [k[0] for k in [P1,P2,P3,P4]]
         y = [k[1] for k in [P1,P2,P3,P4]]
         pyp.plot(x,y,'o',color='green',alpha=0.5,label='four points')
-       
         pyp.legend(loc=0)
-    
-    return out.params
+        
+     
+    # All this strange output is to make soft version tranistion between default
+    # output 0 and default otput 1.     
+    if output == 1:
+        return out
+    else:
+        if output ==-1:
+            print('***** In future linealcontribution will return as defult out instead out.params****')
+        return out.params
 
 
-def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
+
+def removepara(H,M,Hmin = '1/2',Hmax = 'max',output=-1,kwlc={}):
     """ Retrieve lineal contribution to cycle and remove it from cycle.
 
 
-        **H** y **M** corresponds to entire cycle (two branches). I.e. **H** starts and 
-        ends at the same value (or an aproximate value).
+        **H** y **M** corresponds to entire cycle (two branches). I.e. **H** 
+        starts and ends at the same value (or an aproximate value).
 
         El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, defined by:: 
 
@@ -416,15 +448,24 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
 
         Con la variable global FIGS = True shows intermediate states of  
         proceso de determinarion y linear contribution removing.
+        Figure Shows **Hmin** and **Hmax** positions in the cycle.
+        
+        output: kind of output, (0 or -1) out.params or (1) out. (v 0.210304)
+               Note: output is set to -1 as default to achive  backward 
+               compatibility. But it should be changed in future to 1.
+        
+        kwlc = dictionary with kwargs to be passed to lienar contribution. 
 
-        La Figura 249 muestra las posiciones Hmin y Hmax en el ciclo. 
-
-        Returns: H1,M1,H2,M2,[pendiente,salto,desp]
-                
+        Returns: 
+            if output = -1: H1,M1,H2,M2,[pendiente,salto,desp]
+            if output = 1: 
+                returns plain objtect with previous attributes and others. 
+                                            
     """
-    print '**********************************************************'
-    print 'removepara '
-    print '**********************************************************'
+    if PRINT:
+        print('**********************************************************')
+        print('removepara ')
+        print('**********************************************************')
 
     if Hmax == 'max':
         Hmax = max(abs(H))
@@ -433,22 +474,35 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
 
     H1,M1,H2,M2 = splitcycle(H,M)
 
-    p1 = linealcontribution(H1,M1,[Hmax,Hmin],label='dH/dt < 0')
-    p2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0')
-
+    o1 = linealcontribution(H1,M1,[Hmax,Hmin],label='dH/dt < 0',output=output,**kwlc)
+    o2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0',output=output,**kwlc)
+    if output == 1:
+        p1 = o1.params
+        p2 = o2.params
+    elif output == -1:
+        p1 = o1
+        p2 = o2
+        
+    Ms = (p1['Ms'].value + p2['Ms'].value)*0.5
+    if p1['Ms'].stderr == None or p2['Ms'].stderr == None:
+        eMs = None
+    else: 
+        eMs = (p1['Ms'].stderr + p2['Ms'].stderr)*0.5
 
     # Fin de ajustes 
-
-    print 'slope     1:',p1['Xi']
-    print 'slope     2:',p2['Xi']
-    print 'Ms 1       :',p1['Ms']
-    print 'Ms 2       :',p2['Ms']
-    print 'offset  1  :',p1['offset']
-    print 'offset  2  :',p2['offset']
-    print 'a  1       :',p1['a']
-    print 'a  2       :',p2['a']
-    print 'b  1       :',p1['b']
-    print 'b  2       :',p2['b']
+    if PRINT:
+        print('slope     1:',p1['Xi'])
+        print('slope     2:',p2['Xi'])
+        print('Ms 1       :',p1['Ms'])
+        print('Ms 2       :',p2['Ms'])
+        print('Ms         :%s +/- %s'%(Ms,eMs))
+        print('offset  1  :',p1['offset'])
+        print('offset  2  :',p2['offset'])
+        print('a  1       :',p1['a'])
+        print('a  2       :',p2['a'])
+        print('b  1       :',p1['b'])
+        print('b  2       :',p2['b'])
+        
 
 
     # Armamos una pendiente promedio a partir de la obtenida para cada rama.
@@ -467,11 +521,26 @@ def removepara(H,M,Hmin = '1/2',Hmax = 'max'):
         pyp.axhline(salto,color = 'k', alpha =0.5)
         pyp.axhline(-salto,color= 'k', alpha =0.5)
         pyp.legend(loc=0)
-    return H1,M1,H2,M2,[pend,salto,desp]
+        
+    if output == 1:
+        out = ReturnClass()
+        out.H1 = H1
+        out.H2 = H2
+        out.M1 = M1
+        out.M2 = M2
+        out.pend = pend
+        out.desp = desp
+        out.salto = salto
+        out.o1 = o1
+        out.o2 = o2
+        return out
+    else:
+        return H1,M1,H2,M2,[pend,salto,desp]
 
 
 def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10, 
-              weight='None', rhr=False, aini=100., ob = False):
+              weight='None', rhr=False, aini=100., ob = False,
+              __outpk__=-1):
     """ Given a superparamagnetic cycle M vs H, assuming distribution of Lagevin 
         functions calculate <mu>, N and <mu^2> from M vs H cycle. 
 
@@ -486,9 +555,9 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         Arguments:
         ==========
         H and M: 
-                They are assumed to be in cgs units. H in Oe and M in emu/sth.
-                **sth** stands for something, indicating the fact that the
-                moment or magnetisation values can be given by grams, cm^3,
+                They are assumed to be in **cgs units**. H in Oe and M in 
+                emu/sth. **sth** stands for something, indicating the fact that
+                the moment or magnetisation values can be given by grams, cm^3,
                 whatever or even nothing.
                 H and M are np.arrays that with a whole cycle, i.e they include
                 both branches. In case it is only one branch the kwarg **ob** 
@@ -534,11 +603,26 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
 
         ob:     
             {False} or True. ob = one-branch. Is true if in H and M vectors 
-            correspond only to a branch.  
+            correspond only to a branch. 
 
         Returns: 
         ========
-                H1, M1, H2, M2, [slop,step,offset], mu, N, mumu
+            -- H1, M1, H2, M2, [slop,step,offset], mu, N, mumu (if 
+                   __outpk__ -1 or 0).            
+            -- plain instance with previous atributes (if __outptk__ is 1):
+               out.H1:      H1
+               out.H2:      H2
+               out.M1:      M1
+               out.M2:      M2
+               out.slope:   high-field-lineal-contribution slope.
+               out.step :   saturation magntization (or moment or whatever: Ms)
+               out.offset:  offset
+               out.mu:      mean magentic moment (number distribution)
+               out.N:       number of particles (or whatever)
+               out.mumu:    mean magnetic momente (moment distribution)
+               out.o1:      output fo lmfit minimizer corresponding to first branch.
+               out.o2:      output of lmfit minimizer corresponding to second branch.
+               
 
         Printed Information:
         ====================
@@ -560,7 +644,8 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         <mu>_mu = mean magnetic moment according moment-distribution. 
 
 
-        El ciclo M vs H se separa en sus dos ramas. H1,M1 y H2,M2, defined by:: 
+        **M** vs **H** cycle is splitted into their two branches,
+        H1,M1 y H2,M2, defined by:: 
 
             H1,M1: curva con dH/dt < 0. El campo decrece con el tiempo.
             H2,M2: curva con dH/dt > 0. El campo aumenta con el tiempo.
@@ -569,17 +654,22 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         analysis. Is recommended to use graphics to control the goodness of 
         analysis.   
 
-            >> import mvshtools as mt
-            >> mt.FIGS = True
+            >>> import mvshtools as mt
+            >>> mt.FIGS = True
 
 
         The function has been called first as the first author of the paper
         in which is base on. However, I thought it wasn't correct name only one 
         of the names of a three authors of the paper. So the functon was 
         then named with the first letter of each one of the authors: **cpc**. 
-
                
     """
+
+    """ kwargument __outpk__ (output kind) changes output variable from 
+        older version to newer. Old way was a list, now it a a plain instance 
+        with attributes.
+    """ 
+
     __newfig__(reset = True)
     
     # Physics Constants
@@ -594,8 +684,9 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         H1,M1,H2,M2 = splitcycle(H,M)
     
     if rhr:
-        H1 = remove_H_remanent(H1,M1)
-        H2 = remove_H_remanent(H2,M2)
+        H1,r1 = remove_H_remanent(H1,M1,outmore=True)
+        H2,r2 = remove_H_remanent(H2,M2,outmore=True)
+        Hc_rhr= (r2.Hr - r1.Hr)/2
 
     H1max = max(np.abs(H1))
     H2max = max(np.abs(H2))
@@ -626,12 +717,23 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         fixed['Xi'] = clin
     fixed['b']  = 1e-10
     
-    print('\n\nWorking whit dH/dt < 0 branch \n-----------------------------\n')
-    p1 = linealcontribution(H1, M1, [Hmax,Hmin], label='dH/dt < 0', fixed=fixed, 
-                            E=E1, initial = initial)
-    print('\n\nWorking whit dH/dt > 0 branch \n-----------------------------\n')
-    p2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0',fixed=fixed,
-                            E=E2,initial=initial)
+    if PRINT: 
+        print('\n\nWorking whit dH/dt < 0 branch \n-----------------------------\n')
+    o1 = linealcontribution(H1, M1, [Hmax,Hmin], label='dH/dt < 0', fixed=fixed, 
+                            E=E1, initial = initial,output=1)
+    p1 = o1.params
+
+    if PRINT: 
+        print('Reduce ChiSqr',o1.redchi)
+    
+    if PRINT: 
+        print('\n\nWorking whit dH/dt > 0 branch \n-----------------------------\n')
+    o2 = linealcontribution(H2,M2,[Hmax,Hmin],label='dH/dt > 0',fixed=fixed,
+                            E=E2,initial=initial,output=1)
+    p2 = o2.params
+
+    if PRINT: 
+        print('Reduce ChiSqr',o2.redchi)
 
 
     pend  = (p1['Xi']     + p2['Xi'])/2.
@@ -641,25 +743,26 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     M2 = (M2-H2*pend)
 
 
-    
+
 
     # Finish wit cycle analysis 
     # ========================================================================= 
-    print '========================'
-    print 'cycle-analysis results'
-    print '========================'
-    print 'slope 1:',p1['Xi'].value
-    print 'slope 2:',p2['Xi'].value
-    print 'step 1    :',p1['Ms'].value
-    print 'step 2    :',p2['Ms'].value
-    print 'offset  1  :',p1['offset'].value
-    print 'offset  2  :',p2['offset'].value
-    print 'a  1       :',p1['a'].value
-    print 'a  2       :',p2['a'].value
-    print 'b  1       :',p1['b'].value
-    print 'b  2       :',p2['b'].value
-    print 'HC         :',HC
-    print 'X          :',X
+    if PRINT:
+        print('========================')
+        print('cycle-analysis results')
+        print('========================')
+        print('slope 1    :'    ,p1['Xi'].value)
+        print('slope 2    :'    ,p2['Xi'].value)
+        print('step 1     :' ,p1['Ms'].value)
+        print('step 2     :' ,p2['Ms'].value)
+        print('offset  1  :',p1['offset'].value)
+        print('offset  2  :',p2['offset'].value)
+        print('a  1       :',p1['a'].value)
+        print('a  2       :',p2['a'].value)
+        print('b  1       :',p1['b'].value)
+        print('b  2       :',p2['b'].value)
+        print('HC         :',HC)
+        print('X          :',X)
 
 
     desp     = (p1['offset'].value + p2['offset'].value)/2.
@@ -677,22 +780,23 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
     STD      = np.sqrt(mumu-mu**2)
     sigma    = np.sqrt(np.log(rhoA))
 
-
-    print('')
-    print('----------------------------------')
-    print('1: <mu> = %.1f muB'%(mu1))
-    print('2: <mu> = %.1f muB'%(mu2))
-    print('1: N    = %.2e'%(N1))
-    print('2: N    = %.2e'%(N2))
-    print('----------------------------------')
-    print('<mu> .......... = %.1f mB +/- %.1f'%(mu,emu)) 
-    print('sqrt(<mu^2>)... = %.1f mB'%(np.sqrt(mumu)))
-    print('N ............. = %.2e num/sth.'%(N))
-    print('rho ........... = %.2f '%(rhoA))
-    print('STD ........... = %.1f mB'%(STD))
-    print('sigma-lognormal = %.2f '%(sigma))
-    print('----------------------------------')
-    print('<mu>_mu ....... = %.1f mB'%(mumu/mu))
+    if PRINT:
+        if rhr:
+            print('Hc_rhr  =  %.1f'%Hc_rhr)
+        print('----------------------------------')
+        print('1: <mu> = %.1f muB'%(mu1))
+        print('2: <mu> = %.1f muB'%(mu2))
+        print('1: N    = %.2e'%(N1))
+        print('2: N    = %.2e'%(N2))
+        print('----------------------------------')
+        print('<mu> .......... = %.1f mB +/- %.1f'%(mu,emu)) 
+        print('sqrt(<mu^2>)... = %.1f mB'%(np.sqrt(mumu)))
+        print('N ............. = %.2e num/sth.'%(N))
+        print('rho ........... = %.2f '%(rhoA))
+        print('STD ........... = %.1f mB'%(STD))
+        print('sigma-lognormal = %.2f '%(sigma))
+        print('----------------------------------')
+        print('<mu>_mu ....... = %.1f mB'%(mumu/mu))
 
 
     if FIGS:
@@ -703,26 +807,55 @@ def cpc(H, M, Hmin = '1/2', Hmax = 'max', clin=None, T=300, limx=10,
         pyp.axhline(-salto,color= 'k', alpha =0.5)
         pyp.legend(loc=0)
 
-    return H1,M1,H2,M2,[pend,salto,desp],mu,N,mumu
+    if __outpk__ == 1:
+        ret = ReturnClass()
+        ret.H1 = H1
+        ret.H2 = H2
+        ret.M1 = M1
+        ret.M2 = M2
+        ret.slope = pend
+        ret.step  = salto
+        ret.offset = desp
+        ret.mu = mu
+        ret.N  = N
+        ret.mumu = mumu
+        ret.o1 = o1
+        ret.o2 = o2
+        return ret
+    else:
+        if __outpk__ == -1:
+            print('***** In future cpc will return as defult an empty-class instance ' \
+                  'with attributes instead a list. ****')
+        return H1,M1,H2,M2,[pend,salto,desp],mu,N,mumu
 
-def remove_H_remanent(H,M,limx=None):
-    """ Removes the remanent applied magnetic field. Removes coercive field by 
-        by simple **Hc** subtraction. This function should be used only if 
-        correspond.
+def remove_H_remanent(H,M,limx=None,outmore = False):
+    """ Removes the remanent applied magnetic field that sometimes appear in 
+        superconductors SQUID magnetometers. 
+        
+        In fact this function removes coercive field by shiftting and 
+        assuring zero final coercive field. This is to say, removes coercive 
+        field by by simple **Hc** subtraction. This function 
+        should be used only if correspond.
 
         Arguments:
         ----------
         **H** and **M** should be an unique branch. 
-        From **M** extract **Hc** and returns **H-Hc**. 
-        
+        From **M** extract **Hc** and returns **H-Hc**.
+       
         kwargs:
         ------
         **limx**: region (|**H**| < **limx**) to look for the coercive field. 
-        If not given it use 10% of maximum abs(**H**). 
-        
+        If not given it use 10% of maximum abs(**H**). **limx** must be 
+        choosen so **M** is linearly dependent with **H** inside those limits. 
+ 
+        **outmore**, if True (default is False) returns as second argument more
+        information.
+       
         Returns:
         --------
         Returns **H** - **Hc**
+
+        If **outmore** returns structure with **Hr** attribute. 
 
     """
     
@@ -736,27 +869,55 @@ def remove_H_remanent(H,M,limx=None):
         elif np.mean(np.diff(H)>0):
             Hr = np.interp(0,M[j1],H[j1])
         return Hr
+    Hr = Hr(H,M)
+    
+    H = H-Hr
+ 
+    if outmore:
+        r = ReturnClass()
+        r.Hr = Hr
+        return H, r
+    else:
+        return H
 
-    H = H-Hr(H,M)
-    return H
+def anhysteretic(H,M):
+    """ Calculate anhysteretic curve as proposed by Allia at al.  """
+    H1,M1,H2,M2 = splitcycle(H,M)
+    H = (H2+H1[::-1])/2
+    M1i = np.interp(H,H1[::-1],M1[::-1])
+    M2i = np.interp(H,H2,M2)
+    M = (M1i+M2i)/2
+
+    if FIGS:
+        __newfig__()
+        pyp.plot(H1,M1,'b.-',alpha =0.4,label = 'dH/dt < 0')
+        pyp.plot(H2,M2,'r.-',alpha =0.4, label = 'dH/dt > 0')
+        pyp.plot(H,M,'k.-',label = 'Anhysteretic ')
+        pyp.legend(loc=0)
+    return H,M
+    
+
 
 def cyclewithoutHc(H,M):
-    """ Returns a similar cycle with corecive removed """
+    """ Returns a similar cycle without corecive field (by horizontal shift)"""
     H1,M1,H2,M2 = splitcycle(H,M)
     H1 = remove_H_remanent(H1,M1)
     H2 = remove_H_remanent(H2,M2)
     H = np.concatenate([H1,H2])
     M = np.concatenate([M1,M2])
     return H,M
-                    
+
 
 def __makeEdiff__(H,smallvalue=1e-10 ):
     """ Calculates the inverse of the mean difference of each point with their
         neighbours. All points are assigned to a value given by their two 
-        neighbours, except the extreme points that have only one neighbour. 
+        neighbours, except the extreme points that only have one neighbour. 
         
         To avoid division by zero all values are incremented in **smallvalue**. 
-        Default value should work without problem. """
+        Default value should work without problem. 
+        (comment: division by zero would have happened if two suscesive points 
+        are measured at the same "x-value") 
+    """
     D = np.diff(H)        
     D1 = np.append(D[0],D)
     D2 = np.append(D,D[-1])
@@ -774,7 +935,7 @@ def __newfig__(num=None,reset=False):
             this mode, only NUMFIG is reseting. It doesen't create a 
             new figure. 
         num: 
-            skip the fundamental idea of __newfig__, and works exctly 
+            skip the fundamental idea of __newfig__, and works exactly 
             as figure. 
     """
     global NUMFIG
@@ -792,5 +953,8 @@ def __newfig__(num=None,reset=False):
         pyp.cla()
 
     return NUMFIG
+
+class ReturnClass(object):
+    pass
 
 
