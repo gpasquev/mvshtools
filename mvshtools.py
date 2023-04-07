@@ -208,23 +208,37 @@ def __fourpoints__(P1,P2,P3,P4):
 def Xi_and_Hc(H1,M1,H2=None,M2=None,limx=188):
     """ Calculates the initial susceptibility and coercive magnetic field.
 
-        Args:
-        =====    
-        H1,M1 determines the complete cycle or 
-              the cycle downward-branch [dH/dt < 0]
+        Parameters
+        ----------    
+        H1,M1 : 
+            Arrays of magnetic field and magnetization (or magentic 
+            moment), respectively. These arrays determine the complete 
+            cycle or the cycle on the downward-branch [dH/dt < 0].
         
-        H2,M2 determines the cycle rising-branch [dH/dt >0] 
+        H2,M2 : 
+            In case H1 and M1 are only first half cycle, these are arrays 
+            of magnetic field and magnetization, respectively. 
+            If provided, these arrays determine the cycle on the 
+            rising-branch [dH/dt > 0]. If they are None H1 and M1 are 
+            assumed as complete cycle. 
         
-        If H2 and M2 are None H1 and M1 are taken as H and M of complet cycle.
-
-        Kwarg:
-        ======    
-        limx, H-limit to perform the linear fit. It is performed 
-              in [-limx,limx]. 
-              
-        Returns:
-        ========
-        tuple Xi,Hc
+        limx : 
+            float, optional (default 188). H-limit to perform the linear fit. 
+            It is performed in [-limx,limx].
+        
+        Returns
+        -------
+        Returns a tuple containing the initial susceptibility (Xi) and coercive 
+        magnetic field (Hc).
+        
+        Good Procedure
+        --------------
+        Pay attention to figure 500 which is plotted if module.FIGS == True. 
+        Both branches are plotted and linear approximation lines are plotted 
+        over them. In dash vertical lines are plotted -limx and limx. If 
+        approximation is not good reduce limx value.
+        
+    
     """
     if H2 is None:
         H1,M1,H2,M2 = splitcycle(H1, M1)
@@ -260,9 +274,9 @@ def Xi_and_Hc(H1,M1,H2=None,M2=None,limx=188):
         pyp.plot(H1,p1(H1),color='green')
         pyp.plot(H2,M2,'.-b',label='dH/dt>0')
         pyp.plot(H2,p2(H2),color='green')
-        pyp.axvline(-limx,color='k')
-        pyp.axvline( limx,color='k')
-        pyp.xlim([-188,188])
+        pyp.axvline(-limx,color='k',ls='--')
+        pyp.axvline( limx,color='k',ls='--')
+        pyp.xlim([-limx*1.1,limx*1.1])
         pyp.ylim( [ np.min( [ M1[j1].min() , M2[j2].min() ] ) , 
                     np.max( [ M1[j1].max() , M2[j2].max() ] ) ] )
         pyp.axhline(0,color='k')
