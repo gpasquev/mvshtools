@@ -222,7 +222,10 @@ def Xi_and_Hc(H1,M1,H2=None,M2=None,limx=188):
         limx, H-limit to perform the linear fit. It is performed 
               in [-limx,limx]. 
               
-       """
+        Returns:
+        ========
+        tuple Xi,Hc
+    """
     if H2 is None:
         H1,M1,H2,M2 = splitcycle(H1, M1)
 
@@ -881,7 +884,20 @@ def remove_H_remanent(H,M,limx=None,outmore = False):
         return H
 
 def anhysteretic(H,M):
-    """ Calculate anhysteretic curve as proposed by Allia at al.  """
+    """ Calculate anhysteretic curve as proposed by Allia et al in [1]. 
+        
+        H, M are expeted to be a whole cycle. That is, H decreases and then 
+        increases. The output has monotone arrays H and M 
+        (since the curve is anhysteretic).
+        
+        Returns H and M.
+        
+        [1] Allia, P., Coisson, M., Knobel, M., Tiberto, P., & Vinai, F. 
+        (1999). Magnetic hysteresis based on dipolar interactions in granular 
+        magnetic systems. Physical Review B, 60(17), 12207.
+        https://doi.org/10.1103/PhysRevB.60.12207
+
+    """
     H1,M1,H2,M2 = splitcycle(H,M)
     H = (H2+H1[::-1])/2
     M1i = np.interp(H,H1[::-1],M1[::-1])
